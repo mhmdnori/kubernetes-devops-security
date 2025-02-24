@@ -36,7 +36,7 @@ pipeline {
           sh "sed -i 's#replace#mohammad9195/numeric-app:${IMAGE_TAG}#g' k8s_deployment_service.yaml"
           withKubeConfig([credentialsId: 'kubeconfig']) {
             sh "kubectl apply -f k8s_deployment_service.yaml"
-            sh "kubectl rollout restart deployment devsecops-svc"
+            sh "kubectl rollout restart deployment devsecops"
           }
         }
       }
