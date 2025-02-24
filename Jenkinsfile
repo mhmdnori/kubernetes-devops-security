@@ -27,7 +27,7 @@ pipeline {
             
             sh "docker push mohammad9195/numeric-app:${IMAGE_TAG}"
           }
-          sh "echo IMAGE_TAG=${IMAGE_TAG} > image_tag.txt"
+          sh "echo ${IMAGE_TAG} > image_tag.txt"
           archiveArtifacts 'image_tag.txt'
         }
       }
