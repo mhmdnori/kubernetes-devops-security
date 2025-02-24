@@ -1,0 +1,4 @@
+fileignoreconfig:
+- filename: test-secret.txt
+  checksum: d7fa6dcfb0722783464f3b32b064a75cfdf63b1469974a203c12163ae54d289b
+version: ""
