@@ -1,6 +1,11 @@
 pipeline {
   agent any
 
+  environment {
+      SONAR_HOST_URL = 'http://localhost:9001'
+      SCANNER_HOME='SonarScanner'
+  }
+
   stages {
     stage('Build Artifact') {
       steps {
@@ -14,6 +19,33 @@ pipeline {
         sh "mvn test"
       }
     }
+
+  stage('SonarQube Analysis') {
+    steps {
+        withSonarQubeEnv('SonarScanner') {
+            withCredentials([string(credentialsId: 'SONARQUBE_TOKEN', variable: 'SONARQUBE_TOKEN')]) {
+                script {
+                    echo "Running SonarQube Analysis..."
+                    sh '''
+                    set +x
+                    sonar-scanner \
+                      -Dsonar.projectKey=devsecops-application \
+                      -Dsonar.sources=. \
+                      -Dsonar.host.url=$SONAR_HOST_URL \
+                      -Dsonar.login=$SONARQUBE_TOKEN
+                    '''
+                }
+
+                timeout(time: 2, unit: 'MINUTES') {
+                    script {
+                        waitForQualityGate abortPipeline: true
+                    }
+                }
+            }
+        }
+    }
+}
+
     
     stage('Docker Build and Push') {
       steps {
