@@ -2,5 +2,5 @@ fileignoreconfig:
 - filename: test-secret.txt
   checksum: d7fa6dcfb0722783464f3b32b064a75cfdf63b1469974a203c12163ae54d289b
 - filename: Jenkinsfile
-  checksum: e2757b17f5e60f14e6b01d046d5890ba1e5be28a11e7799e958a86a53e55e2af
+  checksum: 11a3389397bb9b7f889589f3331afcdef0a04727ae5738bc0d00c3a6daac36f4
 version: ""
