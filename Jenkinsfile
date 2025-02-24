@@ -43,7 +43,7 @@ pipeline {
           
           withKubeConfig([credentialsId: 'kubeconfig']) {
             sh "kubectl apply -f k8s_deployment_service.yaml"
-            sh "kubectl rollout status deployment/devsecops --timeout=120s"
+            sh "kubectl rollout status deployment/devsecops --timeout=300s"
           }
         }
       }
