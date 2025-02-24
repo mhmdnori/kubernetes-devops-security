@@ -2,22 +2,10 @@ pipeline {
   agent any
 
   stages {
-    stage('Clean Workspace') {
-      steps {
-        cleanWs()
-      }
-    }
-    
-    stage('Checkout SCM') {
-      steps {
-        checkout scm
-      }
-    }
-
     stage('Build Artifact') {
       steps {
         sh "mvn clean package -DskipTests=true"
-        archiveArtifacts 'target/*.jar' 
+        archiveArtifacts 'target/*.jar'
       }
     }
     
@@ -27,20 +15,29 @@ pipeline {
       }
     }
     
-    stage('Docker Build and push') {
+    stage('Docker Build and Push') {
       steps {
-        withDockerRegistry([credentialsId: "docker-hub", url: "https://index.docker.io/v1/"]) {
-          sh "docker build -t mohammad9195/numeric-app ." 
-          sh "docker push mohammad9195/numeric-app" 
+        script {
+          def IMAGE_TAG = sh(script: 'git rev-parse --short HEAD', returnStdout: true).trim()
+          withDockerRegistry([credentialsId: "docker-hub", url: "https://index.docker.io/v1/"]) {
+            sh "docker build -t mohammad9195/numeric-app:${IMAGE_TAG} ."
+            sh "docker push mohammad9195/numeric-app:${IMAGE_TAG}"
+          }
+          sh "echo IMAGE_TAG=${IMAGE_TAG} > image_tag.txt"
+          archiveArtifacts 'image_tag.txt'
         }
       }
     }
     
     stage('Kubernetes Deployment - DEV') {
       steps {
-        sh "sed -i 's#replace#mohammad9195/numeric-app#g' k8s_deployment_service.yaml"
-        withKubeConfig([credentialsId: 'kubeconfig']) {
-          sh "kubectl apply -f k8s_deployment_service.yaml"
+        script {
+          def IMAGE_TAG = readFile('image_tag.txt').trim()
+          sh "sed -i 's#replace#mohammad9195/numeric-app:${IMAGE_TAG}#g' k8s_deployment_service.yaml"
+          withKubeConfig([credentialsId: 'kubeconfig']) {
+            sh "kubectl apply -f k8s_deployment_service.yaml"
+            sh "kubectl rollout restart deployment numeric-app"
+          }
         }
       }
     }
