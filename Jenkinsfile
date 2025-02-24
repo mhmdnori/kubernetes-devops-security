@@ -26,14 +26,13 @@ pipeline {
             withCredentials([string(credentialsId: 'SONARQUBE_TOKEN', variable: 'SONARQUBE_TOKEN')]) {
                 script {
                     echo "Running SonarQube Analysis..."
-                    sh '''
-                    set +x
-                    sonar-scanner \
-                      -Dsonar.projectKey=devsecops-application \
-                      -Dsonar.sources=. \
-                      -Dsonar.host.url=$SONAR_HOST_URL \
-                      -Dsonar.login=$SONARQUBE_TOKEN
-                    '''
+                    sh """
+                      sonar-scanner \
+                        -Dsonar.projectKey=devsecops-application \
+                        -Dsonar.sources=. \
+                        -Dsonar.host.url=${SONAR_HOST_URL} \
+                        -Dsonar.login=${SONARQUBE_TOKEN}
+                    """
                 }
 
                 timeout(time: 2, unit: 'MINUTES') {
