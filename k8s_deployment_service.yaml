@@ -6,6 +6,7 @@ metadata:
   name: devsecops
 spec:
   replicas: 2
+  revisionHistoryLimit: 3 
   selector:
     matchLabels:
       app: devsecops
@@ -13,15 +14,24 @@ spec:
     type: RollingUpdate
     rollingUpdate:
       maxSurge: 1
-      maxUnavailable: 1
+      maxUnavailable: 0
   template:
     metadata:
       labels:
         app: devsecops
     spec:
       containers:
-      - image: replace
-        name: devsecops-container
+      - name: devsecops-container
+        image: replace
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8080
+        readinessProbe: 
+          httpGet:
+            path: /health
+            port: 8080
+          initialDelaySeconds: 10
+          periodSeconds: 5
 ---
 apiVersion: v1
 kind: Service
@@ -31,7 +41,8 @@ metadata:
   name: devsecops-svc
 spec:
   ports:
-  - port: 8080
+  - name: http
+    port: 8080
     protocol: TCP
     targetPort: 8080
   selector:
