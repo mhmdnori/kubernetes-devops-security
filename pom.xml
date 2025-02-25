@@ -72,7 +72,7 @@
                         <id>report</id>
                         <phase>prepare-package</phase>
                         <goals>
-                            <goal>report</goal> <!-- تولید گزارش Coverage -->
+                            <goal>report</goal> 
                         </goals>
                     </execution>
                 </executions>
@@ -84,7 +84,24 @@
                 <artifactId>sonar-maven-plugin</artifactId>
                 <version>5.0.0.4389</version>
             </plugin>
+
+            <!-- Dependency-Check Plugin -->
+            <plugin>
+                <groupId>org.owasp</groupId>
+                <artifactId>dependency-check-maven</artifactId>
+                <version>9.0.9</version> 
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>check</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <failBuildOnCVSS>7</failBuildOnCVSS> 
+                    <suppressionFile>src/main/resources/dependency-check-suppressions.xml</suppressionFile> 
+                </configuration>
+            </plugin>
         </plugins>
     </build>
-
 </project>
