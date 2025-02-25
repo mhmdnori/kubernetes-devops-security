@@ -26,11 +26,11 @@ pipeline {
             sh """
               $SCANNER_HOME \
                 -Dsonar.projectKey=devsecops-application \
-                -Dsonar.sources=src/main/java \ // مسیر کد منبع
-                -Dsonar.java.binaries=target/classes \ // مسیر باینری‌ها
-                -Dsonar.tests=src/test/java \ // مسیر تست‌ها
-                -Dsonar.java.test.binaries=target/test-classes \ // مسیر باینری‌های تست
-                -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml \ // مسیر گزارش Coverage
+                -Dsonar.sources=src/main/java \
+                -Dsonar.java.binaries=target/classes \
+                -Dsonar.tests=src/test/java \
+                -Dsonar.java.test.binaries=target/test-classes \
+                -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml \
                 -Dsonar.host.url=$SONAR_HOST_URL
             """
         }
