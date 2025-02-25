@@ -27,6 +27,7 @@ pipeline {
               $SCANNER_HOME \
                 -Dsonar.projectKey=devsecops-application \
                 -Dsonar.sources=. \
+                -Dsonar.java.binaries=target/classes \
                 -Dsonar.host.url=$SONAR_HOST_URL
             """
           
