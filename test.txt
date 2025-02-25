@@ -1,0 +1,25 @@
+pipeline {
+  agent any
+
+  environment {
+      SONAR_HOST_URL = 'http://localhost:9001'
+  }
+
+  stages { 
+    stage('SonarQube Analysis') {
+      steps {
+        withSonarQubeEnv('SonarScanner') { 
+          withCredentials([string(credentialsId: 'SONARQUBE_TOKEN', variable: 'SONAR_TOKEN')]) {
+            sh """
+              /opt/sonar-scanner/bin/sonar-scanner \
+                -Dsonar.projectKey=devsecops-application \
+                -Dsonar.sources=. \
+                -Dsonar.host.url=$SONAR_HOST_URL \
+                -Dsonar.token=$SONAR_TOKEN
+            """
+          }
+        }
+      }
+    }
+  }
+}
