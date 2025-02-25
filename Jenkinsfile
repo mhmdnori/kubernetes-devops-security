@@ -26,11 +26,13 @@ pipeline {
             sh """
               $SCANNER_HOME \
                 -Dsonar.projectKey=devsecops-application \
-                -Dsonar.sources=. \
-                -Dsonar.java.binaries=target/classes \
+                -Dsonar.sources=src/main/java \ // مسیر کد منبع
+                -Dsonar.java.binaries=target/classes \ // مسیر باینری‌ها
+                -Dsonar.tests=src/test/java \ // مسیر تست‌ها
+                -Dsonar.java.test.binaries=target/test-classes \ // مسیر باینری‌های تست
+                -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml \ // مسیر گزارش Coverage
                 -Dsonar.host.url=$SONAR_HOST_URL
             """
-          
         }
         timeout(time: 5, unit: 'MINUTES') {
           waitForQualityGate abortPipeline: true
