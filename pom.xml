@@ -45,7 +45,7 @@
         <dependency>
             <groupId>org.jacoco</groupId>
             <artifactId>org.jacoco.agent</artifactId>
-            <version>0.8.12</version> <!-- به‌روزرسانی به آخرین نسخه -->
+            <version>0.8.12</version>
             <scope>test</scope>
         </dependency>
     </dependencies>
@@ -61,11 +61,11 @@
             <plugin>
                 <groupId>org.jacoco</groupId>
                 <artifactId>jacoco-maven-plugin</artifactId>
-                <version>0.8.12</version> <!-- به‌روزرسانی به آخرین نسخه -->
+                <version>0.8.12</version>
                 <executions>
                     <execution>
                         <goals>
-                            <goal>prepare-agent</goal> <!-- فعال‌سازی JaCoCo Agent -->
+                            <goal>prepare-agent</goal>
                         </goals>
                     </execution>
                     <execution>
@@ -98,9 +98,26 @@
                     </execution>
                 </executions>
                 <configuration>
-                    <failBuildOnCVSS>7</failBuildOnCVSS> 
+                    <format>ALL</format>
+                    <failBuildOnCVSS>8</failBuildOnCVSS> 
                     <suppressionFile>src/main/resources/dependency-check-suppressions.xml</suppressionFile> 
                 </configuration>
+            </plugin>update 
+
+            <!-- PITest Mutation Testing Plugin -->
+            <plugin>
+                <groupId>org.pitest</groupId>
+                <artifactId>pitest-maven</artifactId>
+                <version>1.18.2</version>
+                <executions>
+                    <execution>
+                        <id>mutation-testing</id>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>mutationCoverage</goal>
+                        </goals>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>
