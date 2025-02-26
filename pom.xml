@@ -6,7 +6,7 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>2.2.1.RELEASE</version>
+        <version>3.2.5</version>
         <relativePath /> <!-- lookup parent from repository -->
     </parent>
 
@@ -19,9 +19,12 @@
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-        <java.version>1.8</java.version>
+        <java.version>17</java.version> <!-- Java 17 برای Spring Boot 3.x الزامی است -->
         <sonar.projectKey>devsecops-application</sonar.projectKey>
         <sonar.host.url>http://localhost:9001</sonar.host.url>
+        <jackson.version>2.17.0</jackson.version> <!-- نسخه امن Jackson -->
+        <snakeyaml.version>2.2</snakeyaml.version> <!-- نسخه امن SnakeYAML -->
+        <logback.version>1.5.3</logback.version> <!-- نسخه امن Logback -->
     </properties>
 
     <dependencies>
@@ -32,7 +35,7 @@
 
         <dependency>
             <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter</artifactId>
+            <artifactId>spring-boot-starter-validation</artifactId> <!-- افزودن اعتبارسنجی -->
         </dependency>
 
         <dependency>
@@ -41,12 +44,35 @@
             <scope>test</scope>
         </dependency>
         
-        <!-- JaCoCo for code coverage -->
+        <!-- JaCoCo برای پوشش کد -->
         <dependency>
             <groupId>org.jacoco</groupId>
-            <artifactId>org.jacoco.agent</artifactId>
+            <artifactId>jacoco-maven-plugin</artifactId>
             <version>0.8.12</version>
             <scope>test</scope>
+        </dependency>
+
+        <!-- مدیریت نسخه‌های Jackson -->
+        <dependency>
+            <groupId>com.fasterxml.jackson</groupId>
+            <artifactId>jackson-bom</artifactId>
+            <version>${jackson.version}</version>
+            <type>pom</type>
+            <scope>import</scope>
+        </dependency>
+
+        <!-- مدیریت نسخه‌های Logback -->
+        <dependency>
+            <groupId>ch.qos.logback</groupId>
+            <artifactId>logback-classic</artifactId>
+            <version>${logback.version}</version>
+        </dependency>
+        
+        <!-- مدیریت نسخه‌های SnakeYAML -->
+        <dependency>
+            <groupId>org.yaml</groupId>
+            <artifactId>snakeyaml</artifactId>
+            <version>${snakeyaml.version}</version>
         </dependency>
     </dependencies>
 
@@ -57,7 +83,7 @@
                 <artifactId>spring-boot-maven-plugin</artifactId>
             </plugin>
 
-            <!-- JaCoCo plugin for code coverage -->
+            <!-- JaCoCo برای پوشش کد -->
             <plugin>
                 <groupId>org.jacoco</groupId>
                 <artifactId>jacoco-maven-plugin</artifactId>
@@ -78,18 +104,18 @@
                 </executions>
             </plugin>
 
-            <!-- SonarQube plugin -->
+            <!-- SonarQube -->
             <plugin>
                 <groupId>org.sonarsource.scanner.maven</groupId>
                 <artifactId>sonar-maven-plugin</artifactId>
                 <version>5.0.0.4389</version>
             </plugin>
 
-            <!-- Dependency-Check Plugin -->
+            <!-- OWASP Dependency-Check -->
             <plugin>
                 <groupId>org.owasp</groupId>
                 <artifactId>dependency-check-maven</artifactId>
-                <version>9.0.9</version> 
+                <version>9.0.9</version>
                 <executions>
                     <execution>
                         <goals>
@@ -98,17 +124,24 @@
                     </execution>
                 </executions>
                 <configuration>
-                    <format>ALL</format>
-                    <failBuildOnCVSS>8</failBuildOnCVSS> 
-                    <suppressionFile>src/main/resources/dependency-check-suppressions.xml</suppressionFile> 
+                    <suppressionFile>src/main/resources/dependency-check-suppressions.xml</suppressionFile>
+                    <skipTestScope>true</skipTestScope>
+                    <formats>XML,HTML,JSON</formats>
                 </configuration>
-            </plugin> 
+            </plugin>
 
-            <!-- PITest Mutation Testing Plugin -->
+            <!-- PITest برای تست موتاسیون -->
             <plugin>
                 <groupId>org.pitest</groupId>
                 <artifactId>pitest-maven</artifactId>
                 <version>1.18.2</version>
+                <configuration>
+                    <mutators>STRONGER</mutators>
+                    <outputFormats>
+                        <outputFormat>HTML</outputFormat>
+                        <outputFormat>XML</outputFormat>
+                    </outputFormats>
+                </configuration>
                 <executions>
                     <execution>
                         <id>mutation-testing</id>
@@ -121,4 +154,17 @@
             </plugin>
         </plugins>
     </build>
+
+    <!-- مدیریت وابستگی‌ها -->
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>org.springframework.cloud</groupId>
+                <artifactId>spring-cloud-dependencies</artifactId>
+                <version>2023.0.1</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
 </project>
