@@ -102,7 +102,7 @@
                     <failBuildOnCVSS>8</failBuildOnCVSS> 
                     <suppressionFile>src/main/resources/dependency-check-suppressions.xml</suppressionFile> 
                 </configuration>
-            </plugin>update 
+            </plugin> 
 
             <!-- PITest Mutation Testing Plugin -->
             <plugin>
