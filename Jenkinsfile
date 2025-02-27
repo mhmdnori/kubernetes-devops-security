@@ -7,11 +7,6 @@ pipeline {
     }
 
     stages {
-        stage('Checkout Source Code') {
-            steps {
-                git branch: 'main', url: 'https://github.com/mhmdnori/kubernetes-devops-security.git'
-            }
-        }
 
         stage('Build Artifact') {
             steps {
@@ -52,24 +47,13 @@ pipeline {
             }
         }
 
-        stage('Download Trivy Database') {
-            steps {
-                script {
-                    sh '''
-                        export TRIVY_DB_REPOSITORY="ghcr.io/aquasecurity/trivy-db"
-                        trivy image --download-db-only
-                    '''
-                }
-            }
-        }
-
         stage('Security Scans') {
             parallel {
                 stage('Trivy FileSystem Scan') {
                     steps {
                         script {
                             try {
-                                sh 'trivy fs --severity HIGH,CRITICAL,MEDIUM --format table -o trivy-fs-report.txt .'
+                                sh 'trivy --db-path /var/lib/trivy/trivy.db fs --severity HIGH,CRITICAL,MEDIUM --format table -o trivy-fs-report.txt .'
                                 archiveArtifacts artifacts: 'trivy-fs-report.txt', allowEmptyArchive: true
 
                                 def reportContent = readFile('trivy-fs-report.txt')
