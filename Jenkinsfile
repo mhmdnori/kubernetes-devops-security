@@ -52,23 +52,58 @@ pipeline {
             }
         }
 
-        stage('Dependency-Check Analysis') {
+        stage('Download Trivy Database') {
             steps {
-                dependencyCheck(
-                    odcInstallation: 'Dependency-Check',
-                    additionalArguments: '''
-                        --noupdate
-                        --project "my-project"
-                        --scan . 
-                        --out reports/dependency-check
-                        --format XML 
-                        --enableExperimental
-                        --failOnCVSS 7
-                        --data /var/lib/jenkins/dependency-check-data
-                    ''',
-                    nvdCredentialsId: 'nvd-api-key', 
-                    stopBuild: true
-                )
+                script {
+                    sh '''
+                        export TRIVY_DB_REPOSITORY="ghcr.io/aquasecurity/trivy-db"
+                        trivy image --download-db-only
+                    '''
+                }
+            }
+        }
+
+        stage('Security Scans') {
+            parallel {
+                stage('Trivy FileSystem Scan') {
+                    steps {
+                        script {
+                            try {
+                                sh 'trivy fs --severity HIGH,CRITICAL,MEDIUM --format table -o trivy-fs-report.txt .'
+                                archiveArtifacts artifacts: 'trivy-fs-report.txt', allowEmptyArchive: true
+
+                                def reportContent = readFile('trivy-fs-report.txt')
+                                if (reportContent.contains("CRITICAL") || reportContent.contains("HIGH")) {
+                                    error "Critical or High severity vulnerabilities found in the filesystem scan. Aborting the pipeline!"
+                                }
+                            } catch (Exception e) {
+                                echo "Trivy filesystem scan failed: ${e.getMessage()}"
+                                currentBuild.result = 'FAILURE'
+                                throw e
+                            }
+                        }
+                    }
+                }
+
+                stage('Dependency-Check Analysis') {
+                    steps {
+                        dependencyCheck(
+                            odcInstallation: 'Dependency-Check',
+                            additionalArguments: '''
+                                --noupdate
+                                --project "my-project"
+                                --scan . 
+                                --out reports/dependency-check
+                                --format XML 
+                                --enableExperimental
+                                --failOnCVSS 7
+                                --data /var/lib/jenkins/dependency-check-data
+                            ''',
+                            nvdCredentialsId: 'nvd-api-key', 
+                            stopBuild: true
+                        )
+                    }
+                }
             }
         }
 
@@ -107,7 +142,7 @@ pipeline {
                     sh "sed -i 's|replace|mohammad9195/numeric-app:${IMAGE_TAG}|g' k8s_deployment_service.yaml"
                     withKubeConfig([credentialsId: 'kubeconfig']) {
                         sh "kubectl apply -f k8s_deployment_service.yaml"
-                        sh "kubectl rollout status deployment/devsecops --timeout=300s"
+                        sh "kubectl rollout status deployment/numeric-app --timeout=300s"
                     }
                 }
             }
@@ -120,10 +155,18 @@ pipeline {
             junit '**/target/surefire-reports/*.xml'
         }
         failure {
-            emailext body: 'Pipeline Failed!', subject: 'Pipeline Status'
+            emailext(
+                body: 'Pipeline Failed!',
+                subject: 'Pipeline Status',
+                recipientProviders: [[$class: 'CulpritsRecipientProvider'], [$class: 'DevelopersRecipientProvider']]
+            )
         }
         success {
-            emailext body: 'Pipeline Succeeded!', subject: 'Pipeline Status'
+            emailext(
+                body: 'Pipeline Succeeded!',
+                subject: 'Pipeline Status',
+                recipientProviders: [[$class: 'CulpritsRecipientProvider'], [$class: 'DevelopersRecipientProvider']]
+            )
         }
     }
 }
