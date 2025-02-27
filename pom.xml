@@ -12,7 +12,7 @@
     </parent>
 
     <groupId>com.devsecops</groupId>
-    <artifactId>numeric</artifactId>
+        <artifactId>numeric</artifactId>
     <version>0.0.1</version>
     <name>numeric</name>
     <description>Demo for DevSecOps</description>
@@ -26,7 +26,6 @@
         <jackson.version>2.17.0</jackson.version>
         <snakeyaml.version>2.2</snakeyaml.version>
         <logback.version>1.5.3</logback.version>
-        <junit-jupiter.version>5.10.2</junit-jupiter.version>
     </properties>
 
     <dependencies>
@@ -111,13 +110,6 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>3.2.5</version>
-                <dependencies>
-                    <dependency>
-                        <groupId>org.junit.platform</groupId>
-                        <artifactId>junit-platform-surefire-provider</artifactId>
-                        <version>1.10.2</version>
-                    </dependency>
-                </dependencies>
                 <configuration>
                     <includes>
                         <include>**/*Tests.java</include>
@@ -125,13 +117,14 @@
                 </configuration>
             </plugin>
 
-            <!-- سایر پلاگین‌ها بدون تغییر -->
+            <!-- SonarQube -->
             <plugin>
                 <groupId>org.sonarsource.scanner.maven</groupId>
                 <artifactId>sonar-maven-plugin</artifactId>
                 <version>5.0.0.4389</version>
             </plugin>
 
+            <!-- OWASP Dependency-Check -->
             <plugin>
                 <groupId>org.owasp</groupId>
                 <artifactId>dependency-check-maven</artifactId>
