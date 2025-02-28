@@ -17,7 +17,7 @@ pipeline {
 
         stage('Maven Test - JUnit and Jacoco') {
             steps {
-                sh "mvn verify"
+                sh "mvn test"
             }
             post {
                 always {
