@@ -17,7 +17,7 @@ pipeline {
 
         stage('Maven Test - JUnit and Jacoco') {
             steps {
-                sh "mvn test"
+                sh "mvn verify"
             }
             post {
                 always {
@@ -38,7 +38,8 @@ pipeline {
                             -Dsonar.tests=src/test/java \
                             -Dsonar.java.test.binaries=target/test-classes \
                             -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml \
-                            -Dsonar.host.url=$SONAR_HOST_URL
+                            -Dsonar.host.url=$SONAR_HOST_URL \
+                            -Dsonar.java.coveragePlugin=jacoco
                     """
                 }
                 timeout(time: 5, unit: 'MINUTES') {
