@@ -126,7 +126,7 @@ pipeline {
                     sh "sed -i 's|replace|mohammad9195/numeric-app:${IMAGE_TAG}|g' k8s_deployment_service.yaml"
                     withKubeConfig([credentialsId: 'kubeconfig']) {
                         sh "kubectl apply -f k8s_deployment_service.yaml"
-                        sh "kubectl rollout status deployment/numeric-app --timeout=300s"
+                        sh "kubectl rollout status deployment/devsecops --timeout=300s"
                     }
                 }
             }
