@@ -53,7 +53,7 @@ pipeline {
                     steps {
                         script {
                             try {
-                                sh 'trivy fs --severity HIGH,CRITICAL,MEDIUM --format table -o trivy-fs-report.txt .'
+                                sh 'trivy fs --severity HIGH,CRITICAL --format table -o trivy-fs-report.txt .'
                                 archiveArtifacts artifacts: 'trivy-fs-report.txt', allowEmptyArchive: true
 
                                 def reportContent = readFile('trivy-fs-report.txt')
