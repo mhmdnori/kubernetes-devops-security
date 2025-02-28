@@ -1,4 +1,3 @@
-<?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0" 
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
@@ -24,8 +23,7 @@
         <sonar.projectKey>devsecops-application</sonar.projectKey>
         <sonar.host.url>http://localhost:9001</sonar.host.url>
         <jackson.version>2.17.0</jackson.version>
-        <snakeyaml.version>2.2</snakeyaml.version>
-        <logback.version>1.4.14</logback.version>
+        <snakeyaml.version>2.2</snakeyaml.version> 
     </properties>
 
     <dependencyManagement>
@@ -61,12 +59,6 @@
                     <artifactId>junit-vintage-engine</artifactId>
                 </exclusion>
             </exclusions>
-        </dependency>
-
-        <dependency>
-            <groupId>ch.qos.logback</groupId>
-            <artifactId>logback-classic</artifactId>
-            <version>${logback.version}</version>
         </dependency>
         
         <dependency>
