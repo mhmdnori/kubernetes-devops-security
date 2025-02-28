@@ -8,12 +8,27 @@ pipeline {
 
     stages {
 
-        stage('Build Artifact') {
+        stage('Gitleaks Scan') {
             steps {
-                sh "mvn clean package -DskipTests=true"
-                archiveArtifacts 'target/*.jar'
+                script {
+                    def workspace = pwd()
+                    sh """
+                    docker run --rm -v $pwd:/path zricethezav/gitleaks:latest detect \
+                        --source /path \
+                        --no-git \
+                        --gitleaks-ignore-path /path/.gitleaksignore \
+                        --report-format json \
+                        --report-path /path/gitleaks-report.json \
+                        --exit-code 0
+                    """
+                    archiveArtifacts artifacts: 'gitleaks-report.json', allowEmptyArchive: true
+                    echo "Gitleaks Report:"
+                    sh 'cat gitleaks-report.json || echo "Report not found"'
+                }
             }
         }
+
+
 
         stage('Maven Test - JUnit and Jacoco') {
             steps {
@@ -100,6 +115,13 @@ pipeline {
                     failedTotalCritical: 0, 
                     stopBuild: true
                 )
+            }
+        }
+
+        stage('Build Artifact') {
+            steps {
+                sh "mvn clean package -DskipTests=true"
+                archiveArtifacts 'target/*.jar'
             }
         }
 
