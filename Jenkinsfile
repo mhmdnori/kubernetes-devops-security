@@ -67,14 +67,16 @@ pipeline {
 
                 stage('Semgrep Scan') {
                     steps {
-                        def workspace = pwd()
-                        sh """
-                            docker run --rm \
-                                -e SEMGREP_APP_TOKEN=$SEMGREP_APP_TOKEN \
-                                -v "${workspace}:/semgrep" \
-                                --workdir /semgrep \
-                                semgrep/semgrep semgrep ci --config=auto
-                        """
+                        script { 
+                            def workspace = pwd()
+                            sh """
+                                docker run --rm \
+                                    -e SEMGREP_APP_TOKEN=$SEMGREP_APP_TOKEN \
+                                    -v "${workspace}:/semgrep" \
+                                    --workdir /semgrep \
+                                    semgrep/semgrep semgrep ci --config=auto
+                            """
+                        }
                     }
                 }
             }
