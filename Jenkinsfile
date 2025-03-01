@@ -65,7 +65,7 @@ pipeline {
                     }
                 }
 
-                /*stage('Semgrep Scan') {
+                stage('Semgrep Scan') {
                     steps {
                         script { 
                             def workspace = pwd()
@@ -73,12 +73,12 @@ pipeline {
                                 docker run --rm \
                                     -v "${workspace}:/semgrep" \
                                     --workdir /semgrep \
-                                    semgrep/semgrep semgrep scan --config=auto --output semgrep-report.json   //Defualt Config
-                            """
+                                    semgrep/semgrep semgrep scan --config=auto --output semgrep-report.json
+                            """   //Defualt Config
                         }
                     }
-                }*/
-               stage('Semgrep Scan') {
+                }
+               /*stage('Semgrep Scan') {
                     steps {
                         script { 
                             def workspace = pwd()
@@ -91,7 +91,7 @@ pipeline {
                             """//Costum config in Semgrep Appsec Platform
                         }
                     }
-                }
+                }*/
             }
         }
 
