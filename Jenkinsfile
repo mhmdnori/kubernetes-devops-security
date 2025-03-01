@@ -13,12 +13,12 @@ pipeline {
                 script {
                     def workspace = pwd()
                     sh """
-                    docker run --rm -v $pwd:/path zricethezav/gitleaks:latest detect \
-                        --source /path \
+                    docker run --rm -v ${workspace}:/path zricethezav/gitleaks:latest detect \
+                        --source="/path" \
                         --no-git \
-                        --gitleaks-ignore-path /path/.gitleaksignore \
+                        --gitleaks-ignore-path="/path/.gitleaksignore" \
                         --report-format json \
-                        --report-path /path/gitleaks-report.json \
+                        --report-path="/path/gitleaks-report.json" \
                         --exit-code 0
                     """
                     archiveArtifacts artifacts: 'gitleaks-report.json', allowEmptyArchive: true
