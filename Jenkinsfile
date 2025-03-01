@@ -4,6 +4,8 @@ pipeline {
     environment {
         SONAR_HOST_URL = 'http://localhost:9001'
         SCANNER_HOME = tool 'SonarScanner'
+        SEMGREP_APP_TOKEN = credentials('SEMGREP_APP_TOKEN')
+        SEMGREP_PR_ID = "${env.CHANGE_ID}"
     }
 
     stages {
@@ -42,28 +44,43 @@ pipeline {
             }
         }
 
-        stage('SonarQube Analysis') {
-            steps {
-                withSonarQubeEnv('SonarScanner') {
-                    sh """
-                        $SCANNER_HOME \
-                            -Dsonar.projectKey=devsecops-application \
-                            -Dsonar.sources=src/main/java \
-                            -Dsonar.java.binaries=target/classes \
-                            -Dsonar.tests=src/test/java \
-                            -Dsonar.java.test.binaries=target/test-classes \
-                            -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml \
-                            -Dsonar.host.url=$SONAR_HOST_URL \
-                            -Dsonar.java.coveragePlugin=jacoco
-                    """
-                }
+        sstage('SAST') {
+            parallel {
+                stage('SonarQube Analysis') {
+                    steps {
+                        withSonarQubeEnv('SonarScanner') {
+                            sh """
+                                $SCANNER_HOME \
+                                -Dsonar.projectKey=devsecops-application \
+                                -Dsonar.sources=src/main/java \
+                                -Dsonar.java.binaries=target/classes \
+                                -Dsonar.tests=src/test/java \
+                                -Dsonar.java.test.binaries=target/test-classes \
+                                -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml \
+                                -Dsonar.host.url=$SONAR_HOST_URL \
+                                -Dsonar.java.coveragePlugin=jacoco
+                            """
+                        }
                 timeout(time: 5, unit: 'MINUTES') {
                     waitForQualityGate abortPipeline: true
                 }
             }
         }
 
-        stage('Security Scans') {
+                stage('Semgrep Scan') {
+                    steps {
+                        sh '''
+                        python3 -m venv myenv
+                        . myenv/bin/activate 
+                        pip install semgrep
+                        semgrep ci
+                        '''
+                    }
+                }
+            }
+        }
+
+        stage('SCA') {
             parallel {
                 stage('Trivy FileSystem Scan') {
                     steps {
