@@ -161,19 +161,5 @@ pipeline {
             archiveArtifacts artifacts: '**/reports/dependency-check/*.xml'
             junit '**/target/surefire-reports/*.xml'
         }
-        failure {
-            emailext(
-                body: 'Pipeline Failed!',
-                subject: 'Pipeline Status',
-                recipientProviders: [[$class: 'CulpritsRecipientProvider'], [$class: 'DevelopersRecipientProvider']]
-            )
-        }
-        success {
-            emailext(
-                body: 'Pipeline Succeeded!',
-                subject: 'Pipeline Status',
-                recipientProviders: [[$class: 'CulpritsRecipientProvider'], [$class: 'DevelopersRecipientProvider']]
-            )
-        }
     }
 }
