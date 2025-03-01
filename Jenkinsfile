@@ -30,8 +30,6 @@ pipeline {
             }
         }
 
-
-
         stage('Maven Test - JUnit and Jacoco') {
             steps {
                 sh "mvn test"
@@ -61,20 +59,22 @@ pipeline {
                                 -Dsonar.java.coveragePlugin=jacoco
                             """
                         }
-                timeout(time: 5, unit: 'MINUTES') {
-                    waitForQualityGate abortPipeline: true
+                        timeout(time: 5, unit: 'MINUTES') {
+                            waitForQualityGate abortPipeline: true
+                        }
+                    }
                 }
-            }
-        }
 
                 stage('Semgrep Scan') {
                     steps {
-                        sh '''
-                        python3 -m venv myenv
-                        . myenv/bin/activate 
-                        pip install semgrep
-                        semgrep ci
-                        '''
+                        def workspace = pwd()
+                        sh """
+                            docker run --rm \
+                                -e SEMGREP_APP_TOKEN=$SEMGREP_APP_TOKEN \
+                                -v "${workspace}:/semgrep" \
+                                --workdir /semgrep \
+                                semgrep/semgrep semgrep ci --config=auto
+                        """
                     }
                 }
             }
