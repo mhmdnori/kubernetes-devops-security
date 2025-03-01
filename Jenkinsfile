@@ -69,7 +69,7 @@ pipeline {
                     steps {
                         script {
                             try {
-                                sh 'trivy fs --db-repository hub.docker.com/r/aquasec/trivy-java-db --severity HIGH,CRITICAL --format table -o trivy-fs-report.txt .'
+                                sh 'trivy fs --java-db-repository hub.docker.com/r/aquasec/trivy-java-db --severity HIGH,CRITICAL --format table -o trivy-fs-report.txt .'
                                 archiveArtifacts artifacts: 'trivy-fs-report.txt', allowEmptyArchive: true
 
                                 def reportContent = readFile('trivy-fs-report.txt')
