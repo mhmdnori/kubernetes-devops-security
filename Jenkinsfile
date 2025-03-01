@@ -44,7 +44,7 @@ pipeline {
             }
         }
 
-        sstage('SAST') {
+        stage('SAST') {
             parallel {
                 stage('SonarQube Analysis') {
                     steps {
