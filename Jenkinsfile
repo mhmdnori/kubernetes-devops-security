@@ -191,7 +191,6 @@ pipeline {
     post {
         always {
             archiveArtifacts artifacts: '**/reports/dependency-check/*.xml'
-            junit '**/target/surefire-reports/*.xml'
         }
     }
 }
