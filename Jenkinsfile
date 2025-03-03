@@ -66,18 +66,26 @@ pipeline {
                 }
 
                 stage('Semgrep Scan') {
-                    steps {
-                        script { 
-                            def workspace = pwd()
-                            sh """
-                                docker run --rm \
-                                    -v "${workspace}:/semgrep" \
-                                    --workdir /semgrep \
-                                    semgrep/semgrep semgrep scan --config=auto --output semgrep-report.json
-                            """   //Defualt Config
+                        steps {
+                            script { 
+                                def workspace = pwd()
+                                sh """
+                                    docker run --rm \
+                                        -e SEMGREP_APP_TOKEN=$SEMGREP_APP_TOKEN \
+                                        -v "${workspace}:/semgrep" \
+                                        --workdir /semgrep \
+                                        returntocorp/semgrep semgrep scan \
+                                        --config=p/owasp-top-ten \
+                                        --config=p/r2c-security-audit \
+                                        --config=p/secure-defaults \
+                                        --config=p/java \
+                                        --output semgrep-report.json \
+                                        /semgrep/src
+                                """ 
                         }
                     }
                 }
+
                /*stage('Semgrep Scan') {
                     steps {
                         script { 
@@ -87,7 +95,8 @@ pipeline {
                                     -e SEMGREP_APP_TOKEN=$SEMGREP_APP_TOKEN \
                                     -v "${workspace}:/semgrep" \
                                     --workdir /semgrep \
-                                    semgrep/semgrep semgrep ci --output semgrep-report.json  
+                                    returntocorp/semgrep semgrep ci --output semgrep-report.json  
+                                    --includ='/semgrep/src/**'
                             """//Costum config in Semgrep Appsec Platform
                         }
                     }
