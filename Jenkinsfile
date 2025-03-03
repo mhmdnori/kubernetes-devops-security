@@ -65,7 +65,7 @@ pipeline {
                     }
                 }
 
-                stage('Semgrep Scan') {
+                /*stage('Semgrep Scan') {
                         steps {
                             script { 
                                 def workspace = pwd()
@@ -80,13 +80,13 @@ pipeline {
                                         --config=p/secure-defaults \
                                         --config=p/java \
                                         --output semgrep-report.json \
-                                        /semgrep/src
+                                        /semgrep/src/main
                                 """ 
                         }
                     }
-                }
+                }*/
 
-               /*stage('Semgrep Scan') {
+               stage('Semgrep Scan') {
                     steps {
                         script { 
                             def workspace = pwd()
@@ -95,12 +95,15 @@ pipeline {
                                     -e SEMGREP_APP_TOKEN=$SEMGREP_APP_TOKEN \
                                     -v "${workspace}:/semgrep" \
                                     --workdir /semgrep \
-                                    returntocorp/semgrep semgrep ci --output semgrep-report.json  
-                                    --includ='/semgrep/src/**'
-                            """//Costum config in Semgrep Appsec Platform
+                                    returntocorp/semgrep:latest \
+                                    semgrep ci \
+                                        --output semgrep-report.json \
+                                        --include='**/*.java' \
+                                        --exclude='**/*Tests.java' 
+                            """
                         }
                     }
-                }*/
+                }
             }
         }
 
