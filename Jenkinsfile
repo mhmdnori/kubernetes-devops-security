@@ -65,7 +65,7 @@ pipeline {
                     }
                 }
 
-                /*stage('Semgrep Scan') {
+                stage('Semgrep Scan') {
                         steps {
                             script { 
                                 def workspace = pwd()
@@ -84,26 +84,26 @@ pipeline {
                                 """ 
                         }
                     }
-                }*/
-
-               stage('Semgrep Scan') {
-                    steps {
-                        script { 
-                            def workspace = pwd()
-                            sh """
-                                docker run --rm \
-                                    -e SEMGREP_APP_TOKEN=$SEMGREP_APP_TOKEN \
-                                    -v "${workspace}:/semgrep" \
-                                    --workdir /semgrep \
-                                    returntocorp/semgrep:latest \
-                                    semgrep ci \
-                                        --output semgrep-report.json \
-                                        --include='**/*.java' \
-                                        --exclude='**/*Tests.java' 
-                            """
-                        }
-                    }
                 }
+
+               //stage('Semgrep Scan') {
+                //    steps {
+                //       script { 
+                //          def workspace = pwd()
+                //            sh """
+                //                docker run --rm \
+                //                   -e SEMGREP_APP_TOKEN=$SEMGREP_APP_TOKEN \
+                //                    -v "${workspace}:/semgrep" \
+                //                    --workdir /semgrep \
+                //                    returntocorp/semgrep:latest \
+                //                    semgrep ci \
+                //                        --output semgrep-report.json \
+                //                        --include='**/*.java' \
+                //                        --exclude='**/*Tests.java' 
+                //            """
+                //        }
+                //    }
+                //}
             }
         }
 
@@ -147,6 +147,14 @@ pipeline {
                             stopBuild: true
                         )
                     }
+                }
+
+                stage('OPA Conftest') {
+                    steps {
+                        script{
+                            def workspace = pwd()
+                            sh "docker run --rm -v ${workspace}:/project openpolicyagent/conftest test --policy OPA-Docker-Security.rego Dockerfile"
+                        }
                 }
             }
         }
