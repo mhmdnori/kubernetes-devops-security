@@ -155,10 +155,11 @@ pipeline {
                             def workspace = pwd()
                             sh "docker run --rm -v ${workspace}:/project openpolicyagent/conftest test --policy OPA-Docker-Security.rego Dockerfile"
                         }
+                    }
                 }
             }
         }
-
+        
         stage('Publish Dependency-Check Results') {
             steps {
                 dependencyCheckPublisher(
