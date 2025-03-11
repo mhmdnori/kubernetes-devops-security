@@ -92,7 +92,7 @@ deny[msg] {
     lastuser := users[count(users)-1]
     some part
     contains(lower(lastuser[part]), forbidden_users[_]
-    msg := sprintf("Line %d: Last USER directive (USER %s) is forbidden", [i, lastuser])
+    msg := sprintf("Line %d: Last USER directive (USER %s) is forbidden", [i, lastuser]))
 }
 
 # Do not sudo
