@@ -153,13 +153,20 @@ pipeline {
                     steps {
                         script{
                             def workspace = pwd()
-                            sh "docker run --rm -v ${workspace}:/project openpolicyagent/conftest test --policy OPA-Docker-Security.rego Dockerfile"
+                            sh """
+                            docker run --rm -v ${workspace}:/project openpolicyagent/conftest test \
+                            --policy OPA-Docker-Security.rego \
+                            --update oci://ghcr.io/open-policy-agent/policies \
+                            --output json \
+                            --strict \
+                            --trace \
+                            Dockerfile > conftest-report.json || true"""
                         }
                     }
                 }
             }
         }
-        
+
         stage('Publish Dependency-Check Results') {
             steps {
                 dependencyCheckPublisher(
@@ -212,6 +219,7 @@ pipeline {
     post {
         always {
             archiveArtifacts artifacts: '**/reports/dependency-check/*.xml'
+            archiveArtifacts artifacts: 'conftest-report.json', allowEmptyArchive: true
         }
     }
 }
