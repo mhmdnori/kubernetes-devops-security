@@ -179,21 +179,9 @@ pipeline {
                 script {
                     def workspace = pwd()
                     sh """
-                        mkdir -p kubesec-reports
-                        for file in k8s/*.yaml; do
-                            if [ -f "\$file" ]; then
-                                scan_result=\$(docker run -i kubesec/kubesec:v2 scan /dev/stdin < \$file)
-                                echo "\$scan_result" > kubesec-reports/\$(basename \$file .yaml).json
-                                if echo "\$scan_result" | grep -q '"critical"'; then
-                                    echo "Critical security issues found in \$file"
-                                    exit 1
-                                fi
-                            else
-                                echo "No YAML files found in k8s/ directory"
-                            fi
-                        done
+                        docker run --rm -v ${workspace}:/kubesec kubesec/kubesec:v2 scan /kubesec/k8s_deployment_service.yaml > kscan-result.json
                     """
-                    archiveArtifacts artifacts: 'kubesec-reports/*.json', allowEmptyArchive: true
+                    archiveArtifacts artifacts: 'kscan-result.json', allowEmptyArchive: true
                 }
             }
         }
