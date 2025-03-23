@@ -178,10 +178,23 @@ pipeline {
             steps {
                 script {
                     def workspace = pwd()
-                    sh """
-                        docker run --rm -v ${workspace}:/kubesec kubesec/kubesec:v2 scan /kubesec/k8s_deployment_service.yaml > kscan-result.json
-                    """
+                    def status = sh(script: """
+                        docker run --rm -v ${workspace}:/kubesec kubesec/kubesec:v2 scan /kubesec/k8s_deployment_service.yaml > kscan-result.json 2>&1
+                        cat kscan-result.json
+                    """, returnStatus: true)
+                    
                     archiveArtifacts artifacts: 'kscan-result.json', allowEmptyArchive: true
+                    
+                    if (status == 2) {
+                        def report = readFile('kscan-result.json')
+                        if (report.contains('"critical"')) {
+                            error "Critical security issues found in k8s_deployment_service.yaml. Check kscan-result.json."
+                        } else {
+                            echo "No critical issues found, but some objects (e.g., Service) were not scanned. Proceeding."
+                        }
+                    } else if (status != 0) {
+                        error "Kubesec scan failed with exit code ${status}."
+                    }
                 }
             }
         }
