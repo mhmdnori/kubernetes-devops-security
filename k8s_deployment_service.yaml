@@ -20,12 +20,24 @@ spec:
       labels:
         app: devsecops
     spec:
+      securityContext:
+        runAsNonRoot: true
       containers:
       - name: devsecops-container
         image: replace
         imagePullPolicy: Always
         ports:
         - containerPort: 8080
+        resources:
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+        securityContext:
+          runAsNonRoot: true
+          runAsUser: 1000
 ---
 apiVersion: v1
 kind: Service

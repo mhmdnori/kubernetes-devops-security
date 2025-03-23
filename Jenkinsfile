@@ -66,44 +66,26 @@ pipeline {
                 }
 
                 stage('Semgrep Scan') {
-                        steps {
-                            script { 
-                                def workspace = pwd()
-                                sh """
-                                    docker run --rm \
-                                        -e SEMGREP_APP_TOKEN=$SEMGREP_APP_TOKEN \
-                                        -v "${workspace}:/semgrep" \
-                                        --workdir /semgrep \
-                                        returntocorp/semgrep semgrep scan \
-                                        --config=p/owasp-top-ten \
-                                        --config=p/r2c-security-audit \
-                                        --config=p/secure-defaults \
-                                        --config=p/java \
-                                        --output semgrep-report.json \
-                                        /semgrep/src/main
-                                """ 
+                    steps {
+                        script { 
+                            def workspace = pwd()
+                            sh """
+                                docker run --rm \
+                                    -e SEMGREP_APP_TOKEN=$SEMGREP_APP_TOKEN \
+                                    -v "${workspace}:/semgrep" \
+                                    --workdir /semgrep \
+                                    returntocorp/semgrep semgrep scan \
+                                    --config=p/owasp-top-ten \
+                                    --config=p/r2c-security-audit \
+                                    --config=p/secure-defaults \
+                                    --config=p/java \
+                                    --output semgrep-report.json \
+                                    /semgrep/src/main
+                            """
+                            archiveArtifacts artifacts: 'semgrep-report.json', allowEmptyArchive: true
                         }
                     }
                 }
-
-               //stage('Semgrep Scan') {
-                //    steps {
-                //       script { 
-                //          def workspace = pwd()
-                //            sh """
-                //                docker run --rm \
-                //                   -e SEMGREP_APP_TOKEN=$SEMGREP_APP_TOKEN \
-                //                    -v "${workspace}:/semgrep" \
-                //                    --workdir /semgrep \
-                //                    returntocorp/semgrep:latest \
-                //                    semgrep ci \
-                //                        --output semgrep-report.json \
-                //                        --include='**/*.java' \
-                //                        --exclude='**/*Tests.java' 
-                //            """
-                //        }
-                //    }
-                //}
             }
         }
 
@@ -148,34 +130,46 @@ pipeline {
                         )
                     }
                 }
-
-                stage('OPA Conftest') {
-                    steps {
-                        script{
-                            def workspace = pwd()
-                            sh """
-                            docker run --rm -v ${workspace}:/project openpolicyagent/conftest test \
-                            --update oci://ghcr.io/open-policy-agent/policies \
-                            --policy /project/policies \
-                            --policy /project/OPA-Docker-Security.rego \
-                            --output json \
-                            --strict \
-                            --trace \
-                            Dockerfile > conftest-report.json || true"""
-                        }
-                    }
-                }
             }
         }
 
-        stage('Publish Dependency-Check Results') {
-            steps {
-                dependencyCheckPublisher(
-                    pattern: 'reports/dependency-check/dependency-check-report.xml',
-                    failedNewHigh: 1, 
-                    failedTotalCritical: 0, 
-                    stopBuild: true
-                )
+        stage('OPA') {
+            parallel {
+                stage('Docker Conftest') {
+                    steps {
+                        script {
+                            def workspace = pwd()
+                            def status = sh(script: """
+                            docker run --rm -v ${workspace}:/project openpolicyagent/conftest test \
+                            /project/Dockerfile \
+                            --policy /project/OPA-Docker-Security.rego \
+                            --output json \
+                            --strict > docker-conftest-report.json
+                            """, returnStatus: true)
+                            if (status != 0) {
+                                error "Docker Conftest failed. Check docker-conftest-report.json for details."
+                            }
+                        }
+                    }
+                }
+
+                stage('K8S Conftest') {
+                    steps {
+                        script {
+                            def workspace = pwd()
+                            def status = sh(script: """
+                            docker run --rm -v ${workspace}:/project openpolicyagent/conftest test \
+                            /project/k8s_deployment_service.yaml \
+                            --policy /project/OPA-K8s-Security.rego \
+                            --output json \
+                            --strict > K8S-conftest-report.json
+                            """, returnStatus: true)
+                            if (status != 0) {
+                                error "Kubernetes Conftest failed. Check K8S-conftest-report.json for details."
+                            }
+                        }
+                    }
+                }
             }
         }
 
@@ -219,8 +213,13 @@ pipeline {
 
     post {
         always {
-            archiveArtifacts artifacts: '**/reports/dependency-check/*.xml'
-            archiveArtifacts artifacts: 'conftest-report.json', allowEmptyArchive: true
+            archiveArtifacts artifacts: '**/reports/dependency-check/*.xml, docker-conftest-report.json, K8S-conftest-report.json, semgrep-report.json, trivy-fs-report.txt, gitleaks-report.json', allowEmptyArchive: true
+            dependencyCheckPublisher(
+                pattern: 'reports/dependency-check/dependency-check-report.xml',
+                failedNewHigh: 1, 
+                failedTotalCritical: 0, 
+                stopBuild: true
+            )
         }
     }
 }
