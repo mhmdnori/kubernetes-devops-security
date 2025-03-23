@@ -173,6 +173,31 @@ pipeline {
             }
         }
 
+        // Scan local YAML file wiht Docker kubesec
+        stage('Kubesec Scan Local YAML') {
+            steps {
+                script {
+                    def workspace = pwd()
+                    sh """
+                        mkdir -p kubesec-reports
+                        for file in k8s/*.yaml; do
+                            if [ -f "\$file" ]; then
+                                scan_result=\$(docker run -i kubesec/kubesec:v2 scan /dev/stdin < \$file)
+                                echo "\$scan_result" > kubesec-reports/\$(basename \$file .yaml).json
+                                if echo "\$scan_result" | grep -q '"critical"'; then
+                                    echo "Critical security issues found in \$file"
+                                    exit 1
+                                fi
+                            else
+                                echo "No YAML files found in k8s/ directory"
+                            fi
+                        done
+                    """
+                    archiveArtifacts artifacts: 'kubesec-reports/*.json', allowEmptyArchive: true
+                }
+            }
+        }
+
         stage('Build Artifact') {
             steps {
                 sh "mvn clean package -DskipTests=true"
@@ -209,11 +234,29 @@ pipeline {
                 }
             }
         }
+
+        // اضافه شده: اسکن منابع مستقر در خوشه با Kubesec
+        stage('Kubesec Scan Deployed Resources') {
+            steps {
+                script {
+                    withKubeConfig([credentialsId: 'kubeconfig']) {
+                        sh """
+                            kubectl get deployment devsecops -o yaml | docker run -i kubesec/kubesec:v2 scan /dev/stdin > kubesec-deployment.json
+                            if grep -q '"critical"' kubesec-deployment.json; then
+                                echo "Critical security issues found in deployed Deployment devsecops"
+                                exit 1
+                            fi
+                        """
+                        archiveArtifacts artifacts: 'kubesec-deployment.json', allowEmptyArchive: true
+                    }
+                }
+            }
+        }
     }
 
     post {
         always {
-            archiveArtifacts artifacts: '**/reports/dependency-check/*.xml, docker-conftest-report.json, K8S-conftest-report.json, semgrep-report.json, trivy-fs-report.txt, gitleaks-report.json', allowEmptyArchive: true
+            archiveArtifacts artifacts: '**/reports/dependency-check/*.xml, docker-conftest-report.json, K8S-conftest-report.json, semgrep-report.json, trivy-fs-report.txt, gitleaks-report.json, kubesec-reports/*.json, kubesec-deployment.json', allowEmptyArchive: true
             dependencyCheckPublisher(
                 pattern: 'reports/dependency-check/dependency-check-report.xml',
                 failedNewHigh: 1, 
