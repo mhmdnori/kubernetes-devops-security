@@ -6,7 +6,7 @@ pipeline {
         SCANNER_HOME = tool 'SonarScanner'
         SEMGREP_APP_TOKEN = credentials('SEMGREP_APP_TOKEN')
         SEMGREP_PR_ID = "${env.CHANGE_ID}"
-        APPLICATION_URL = 'http://192.168.49.2:32735'
+        APPLICATION_URL = 'http://192.168.49.2'
     }
 
     stages {
@@ -241,19 +241,13 @@ pipeline {
             steps {
                 script {
                     def workspace = pwd()
-                    sh """
-                        docker run --rm -v ${workspace}:/zap -t zaproxy/zap-stable zap-api-scan.py \
-                            -t ${APPLICATION_URL}/v3/api-docs \
-                            -f openapi \
-                            -r zap-report.html
-                    """
+                    sh " bash zap.sh"
                     archiveArtifacts artifacts: 'zap-report.html', allowEmptyArchive: true
                     echo "OWASP ZAP report saved as zap-report.html."
                 }
             }
         }
 
-        // اضافه شده: اسکن منابع مستقر در خوشه با Kubesec
         stage('Kubesec Scan Deployed Resources') {
             steps {
                 script {
@@ -281,6 +275,7 @@ pipeline {
                 failedTotalCritical: 0, 
                 stopBuild: true
             )
+            publishHTML([allowMissing: false, alwaysLinkToLastBuild: true, icon: '', keepAll: true, reportDir: 'owasp-zap-report', reportFiles: 'zap-report.html', reportName: 'Owasp Zap', reportTitles: 'Owasp Zap', useWrapperFileDirectly: true])
         }
     }
 }
