@@ -42,6 +42,12 @@ spec:
           capabilities:
             drop:
             - ALL
+        volumeMounts:
+        - name: tmp-dir
+          mountPath: /tmp
+      volumes:
+      - name: tmp-dir
+        emptyDir: {}
 ---
 apiVersion: v1
 kind: Service
