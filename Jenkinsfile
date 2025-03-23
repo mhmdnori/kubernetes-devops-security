@@ -6,6 +6,7 @@ pipeline {
         SCANNER_HOME = tool 'SonarScanner'
         SEMGREP_APP_TOKEN = credentials('SEMGREP_APP_TOKEN')
         SEMGREP_PR_ID = "${env.CHANGE_ID}"
+        APPLICATION_URL = 'http://192.168.49.2:32735'
     }
 
     stages {
@@ -232,6 +233,22 @@ pipeline {
                         sh "kubectl apply -f k8s_deployment_service.yaml"
                         sh "kubectl rollout status deployment/devsecops --timeout=300s"
                     }
+                }
+            }
+        }
+
+        stage('DAST Scan') {
+            steps {
+                script {
+                    def workspace = pwd()
+                    sh """
+                        docker run --rm -v ${workspace}:/zap -t zaproxy/zap-stable zap-api-scan.py \
+                            -t ${APPLICATION_URL}/v3/api-docs \
+                            -f openapi \
+                            -r zap-report.html
+                    """
+                    archiveArtifacts artifacts: 'zap-report.html', allowEmptyArchive: true
+                    echo "OWASP ZAP report saved as zap-report.html."
                 }
             }
         }
