@@ -7,7 +7,7 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.web.SecurityFilterChain;
 
 @Configuration
-@Profile("test") // فقط توی پروفایل تست فعال باشه
+@Profile("test")
 public class TestSecurityConfig {
 
     @Bean
