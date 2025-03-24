@@ -113,6 +113,18 @@
             <version>5.6.0</version>
         </dependency>
 
+        <dependency>
+            <groupId>commons-beanutils</groupId>
+            <artifactId>commons-beanutils</artifactId>
+            <version>1.9.4</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.jenkins-ci.plugins</groupId>
+            <artifactId>script-security</artifactId>
+            <version>1336.vf33a_</version>
+        </dependency>
+
 
         <!-- Override Tomcat versions to fix CVE-2025-24813 -->
         <dependency>
