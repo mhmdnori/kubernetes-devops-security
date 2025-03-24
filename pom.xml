@@ -26,6 +26,14 @@
         <snakeyaml.version>2.2</snakeyaml.version> 
     </properties>
 
+    <repositories>
+        <repository>
+            <id>jenkins-ci</id>
+            <name>Jenkins CI Repository</name>
+            <url>https://repo.jenkins-ci.org/public/</url>
+        </repository>
+    </repositories>
+
     <dependencyManagement>
         <dependencies>
             <dependency>
@@ -76,11 +84,6 @@
         </dependency>
 
         <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-web</artifactId>
-        </dependency>
-
-        <dependency>
             <groupId>javax.servlet</groupId>
             <artifactId>javax.servlet-api</artifactId>
             <version>4.0.1</version>
@@ -109,8 +112,7 @@
             <artifactId>dependency-check-jenkins-plugin</artifactId>
             <version>5.6.0</version>
         </dependency>
-
-
+        
         <!-- Override Tomcat versions to fix CVE-2025-24813 -->
         <dependency>
             <groupId>org.apache.tomcat.embed</groupId>
