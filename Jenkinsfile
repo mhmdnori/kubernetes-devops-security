@@ -10,7 +10,6 @@ pipeline {
     }
 
     stages {
-
         stage('Gitleaks Scan') {
             steps {
                 script {
@@ -98,7 +97,6 @@ pipeline {
                             try {
                                 sh 'trivy fs --java-db-repository hub.docker.com/r/aquasec/trivy-java-db --severity HIGH,CRITICAL --format table -o trivy-fs-report.txt .'
                                 archiveArtifacts artifacts: 'trivy-fs-report.txt', allowEmptyArchive: true
-
                                 def reportContent = readFile('trivy-fs-report.txt')
                                 if (reportContent.contains("CRITICAL") || reportContent.contains("HIGH")) {
                                     error "Critical or High severity vulnerabilities found in the filesystem scan. Aborting the pipeline!"
@@ -174,7 +172,6 @@ pipeline {
             }
         }
 
-        // Scan local YAML file wiht Docker kubesec
         stage('Kubesec Scan Local YAML') {
             steps {
                 script {
@@ -183,9 +180,7 @@ pipeline {
                         docker run --rm -v ${workspace}:/kubesec kubesec/kubesec:v2 scan /kubesec/k8s_deployment_service.yaml > kscan-result.json 2>&1
                         cat kscan-result.json
                     """, returnStatus: true)
-                    
                     archiveArtifacts artifacts: 'kscan-result.json', allowEmptyArchive: true
-                    
                     if (status == 2) {
                         def report = readFile('kscan-result.json')
                         if (report.contains('"critical"')) {
@@ -203,7 +198,7 @@ pipeline {
         stage('Build Artifact') {
             steps {
                 sh "mvn clean package -DskipTests=true"
-                archiveArtifacts 'target/*.jar'
+                archiveArtifacts artifacts: 'target/*.jar', allowEmptyArchive: true
             }
         }
 
@@ -211,15 +206,14 @@ pipeline {
             steps {
                 script {
                     def GIT_COMMIT = sh(script: 'git rev-parse --short HEAD', returnStdout: true).trim()
-                    def IMAGE_TAG = "${GIT_COMMIT}-${BUILD_NUMBER}" 
-                    
+                    def IMAGE_TAG = "${GIT_COMMIT}-${BUILD_NUMBER}"
                     withDockerRegistry([credentialsId: "docker-hub", url: "https://index.docker.io/v1/"]) {
                         sh "echo 'Building image: mohammad9195/numeric-app:${IMAGE_TAG}'"
                         sh "docker build -t mohammad9195/numeric-app:${IMAGE_TAG} ."
                         sh "docker push mohammad9195/numeric-app:${IMAGE_TAG}"
                     }
                     sh "echo ${IMAGE_TAG} > image_tag.txt"
-                    archiveArtifacts 'image_tag.txt'
+                    archiveArtifacts artifacts: 'image_tag.txt', allowEmptyArchive: true
                 }
             }
         }
@@ -241,7 +235,7 @@ pipeline {
             steps {
                 script {
                     def workspace = pwd()
-                    sh " bash zap.sh"
+                    sh "bash zap.sh"
                     archiveArtifacts artifacts: 'zap-report.html', allowEmptyArchive: true
                     echo "OWASP ZAP report saved as zap-report.html."
                 }
@@ -268,14 +262,14 @@ pipeline {
 
     post {
         always {
-            archiveArtifacts artifacts: '**/reports/dependency-check/*.xml, docker-conftest-report.json, K8S-conftest-report.json, semgrep-report.json, trivy-fs-report.txt, gitleaks-report.json, kubesec-reports/*.json, kubesec-deployment.json', allowEmptyArchive: true
+            archiveArtifacts artifacts: '**/reports/dependency-check/*.xml, docker-conftest-report.json, K8S-conftest-report.json, semgrep-report.json, trivy-fs-report.txt, gitleaks-report.json, kubesec-reports/*.json, kubesec-deployment.json, target/*.jar, image_tag.txt', allowEmptyArchive: true
             dependencyCheckPublisher(
                 pattern: 'reports/dependency-check/dependency-check-report.xml',
                 failedNewHigh: 1, 
                 failedTotalCritical: 0, 
                 stopBuild: true
             )
-            publishHTML([allowMissing: false, alwaysLinkToLastBuild: true, icon: '', keepAll: true, reportDir: 'owasp-zap-report', reportFiles: 'zap-report.html', reportName: 'Owasp Zap', reportTitles: 'Owasp Zap', useWrapperFileDirectly: true])
+            publishHTML([allowMissing: false, alwaysLinkToLastBuild: true, keepAll: true, reportDir: 'owasp-zap-report', reportFiles: 'zap-report.html', reportName: 'Owasp Zap', reportTitles: 'Owasp Zap', useWrapperFileDirectly: true])
         }
     }
 }
