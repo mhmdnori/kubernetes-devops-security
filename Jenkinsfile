@@ -235,9 +235,23 @@ pipeline {
             steps {
                 script {
                     def workspace = pwd()
-                    sh "bash zap.sh"
+                    def portStatus = sh(script: """
+                        kubectl -n default get svc devsecops-svc -o json | jq -r '.spec.ports[0].nodePort'
+                    """, returnStdout: true, returnStatus: true)
+                    
+                    def port = portStatus.trim()
+                    echo "Using nodePort: ${port} for DAST scan."
+                    
+                    def zapStatus = sh(script: """
+                        docker run --rm --network host -v ${workspace}:/zap/wrk/:rw \
+                            -t zaproxy/zap-stable zap-api-scan.py \
+                            -t http://192.168.49.2:${port}/v3/api-docs \
+                            -f openapi \
+                            -r /zap/wrk/zap-report.html \
+                            -I
+                    """, returnStatus: true)
+                    
                     archiveArtifacts artifacts: 'zap-report.html', allowEmptyArchive: true
-                    echo "OWASP ZAP report saved as zap-report.html."
                 }
             }
         }
@@ -262,14 +276,14 @@ pipeline {
 
     post {
         always {
-            archiveArtifacts artifacts: '**/reports/dependency-check/*.xml, docker-conftest-report.json, K8S-conftest-report.json, semgrep-report.json, trivy-fs-report.txt, gitleaks-report.json, kubesec-reports/*.json, kubesec-deployment.json, target/*.jar, image_tag.txt', allowEmptyArchive: true
+            archiveArtifacts artifacts: '**/reports/dependency-check/*.xml, docker-conftest-report.json, K8S-conftest-report.json, semgrep-report.json, trivy-fs-report.txt, gitleaks-report.json, kubesec-reports/*.json, kubesec-deployment.json, target/*.jar, image_tag.txt, zap-report.html', allowEmptyArchive: true
             dependencyCheckPublisher(
                 pattern: 'reports/dependency-check/dependency-check-report.xml',
                 failedNewHigh: 1, 
                 failedTotalCritical: 0, 
                 stopBuild: true
             )
-            publishHTML([allowMissing: false, alwaysLinkToLastBuild: true, keepAll: true, reportDir: 'owasp-zap-report', reportFiles: 'zap-report.html', reportName: 'Owasp Zap', reportTitles: 'Owasp Zap', useWrapperFileDirectly: true])
+            publishHTML([allowMissing: true, alwaysLinkToLastBuild: true, keepAll: true, reportDir: '.', reportFiles: 'zap-report.html', reportName: 'Owasp Zap', reportTitles: 'Owasp Zap', useWrapperFileDirectly: true])
         }
     }
 }
