@@ -281,8 +281,8 @@ pipeline {
                         docker run --rm --network host -v ${workspace}:/zap/wrk/:rw -t zaproxy/zap-stable zap-api-scan.py \
                             -t http://${minikubeIp}:${port}/v3/api-docs \
                             -f openapi \
-                            -r /zap/wrk/zap-report.xml \
-                            -x \
+                            -r /zap/wrk/zap-report.html \
+                            -x /zap/wrk/zap-report.xml \
                             -I
                     """, returnStatus: true)
                     
@@ -297,7 +297,7 @@ pipeline {
                         error "ZAP scan failed with unexpected exit code ${zapStatus}"
                     }
                     
-                    archiveArtifacts artifacts: 'zap-report.xml', allowEmptyArchive: true
+                    archiveArtifacts artifacts: 'zap-report.xml,zap-report.html', allowEmptyArchive: true
                 }
             }
         }
@@ -359,7 +359,7 @@ pipeline {
                 failedTotalCritical: 0, 
                 stopBuild: true
             )
-            publishHTML([allowMissing: true, alwaysLinkToLastBuild: true, keepAll: true, reportDir: '.', reportFiles: 'zap-report.xml', reportName: 'Owasp Zap', reportTitles: 'Owasp Zap', useWrapperFileDirectly: true])
+            publishHTML([allowMissing: true, alwaysLinkToLastBuild: true, keepAll: true, reportDir: '.', reportFiles: 'zap-report.html', reportName: 'Owasp Zap', reportTitles: 'Owasp Zap', useWrapperFileDirectly: true])
         }
     }
 }
