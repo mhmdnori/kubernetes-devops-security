@@ -6,6 +6,8 @@ pipeline {
         SCANNER_HOME = tool 'SonarScanner'
         SEMGREP_APP_TOKEN = credentials('SEMGREP_APP_TOKEN')
         SEMGREP_PR_ID = "${env.CHANGE_ID}"
+        DEFECTDOJO_URL = 'http://localhost:8081'
+        DEFECTDOJO_API_KEY = credentials('DefectDojo')
     }
 
     stages {
@@ -78,6 +80,7 @@ pipeline {
                                     --config=p/r2c-security-audit \
                                     --config=p/secure-defaults \
                                     --config=p/java \
+                                    --json \
                                     --output semgrep-report.json \
                                     /semgrep/src/main
                             """
@@ -94,10 +97,10 @@ pipeline {
                     steps {
                         script {
                             try {
-                                sh 'trivy fs --java-db-repository hub.docker.com/r/aquasec/trivy-java-db --severity HIGH,CRITICAL --format table -o trivy-fs-report.txt .'
-                                archiveArtifacts artifacts: 'trivy-fs-report.txt', allowEmptyArchive: true
-                                def reportContent = readFile('trivy-fs-report.txt')
-                                if (reportContent.contains("CRITICAL") || reportContent.contains("HIGH")) {
+                                sh 'trivy fs --java-db-repository hub.docker.com/r/aquasec/trivy-java-db --severity HIGH,CRITICAL --format json -o trivy-fs-report.json .'
+                                archiveArtifacts artifacts: 'trivy-fs-report.json', allowEmptyArchive: true
+                                def reportContent = readFile('trivy-fs-report.json')
+                                if (reportContent.contains('"Severity": "CRITICAL"') || reportContent.contains('"Severity": "HIGH"')) {
                                     error "Critical or High severity vulnerabilities found in the filesystem scan. Aborting the pipeline!"
                                 }
                             } catch (Exception e) {
@@ -218,9 +221,9 @@ pipeline {
             steps {
                 script {
                     def imageTag = readFile('image_tag.txt').trim()
-                    sh "trivy image localhost:5000/numeric-app:${imageTag} --severity HIGH,CRITICAL -o trivy-image-report.txt"
-                    archiveArtifacts artifacts: 'trivy-image-report.txt', allowEmptyArchive: true
-                    if (sh(returnStatus: true, script: "grep 'Total: [1-9]' trivy-image-report.txt") == 0) {
+                    sh "trivy image localhost:5000/numeric-app:${imageTag} --severity HIGH,CRITICAL -f json -o trivy-image-report.json"
+                    archiveArtifacts artifacts: 'trivy-image-report.json', allowEmptyArchive: true
+                    if (sh(returnStatus: true, script: "jq '.Results[] | select(.Vulnerabilities[]?.Severity | contains(\"HIGH\", \"CRITICAL\"))' trivy-image-report.json") == 0) {
                         error "High or Critical vulnerabilities found in the container image."
                     }
                 }
@@ -302,11 +305,42 @@ pipeline {
                 }
             }
         }
+
+        stage('Publish to DefectDojo') {
+            steps {
+                script {
+                    def reports = [
+                        [artifact: 'gitleaks-report.json', scanType: 'Gitleaks Scan'],
+                        [artifact: 'semgrep-report.json', scanType: 'Semgrep JSON Report'],
+                        [artifact: 'trivy-fs-report.json', scanType: 'Trivy Scan'],
+                        [artifact: 'trivy-image-report.json', scanType: 'Trivy Scan'],
+                        [artifact: 'reports/dependency-check/dependency-check-report.xml', scanType: 'Dependency Check Scan'],
+                        [artifact: 'zap-report.html', scanType: 'ZAProxy Scan']
+                    ]
+
+                    for (report in reports) {
+                        defectDojoPublisher(
+                            artifact: report.artifact,
+                            productName: 'numeric-app',
+                            scanType: report.scanType,
+                            engagementName: 'CI/CD Run - March 2025',
+                            defectDojoCredentialsId: 'DEFECTDOJO_API_KEY',
+                            defectDojoUrl: "${DEFECTDOJO_URL}",
+                            sourceCodeUrl: 'https://github.com/your-org/your-repo.git',
+                            branchTag: 'main',
+                            autoCreateProducts: true,
+                            autoCreateEngagements: true,
+                            reuploadScan: true
+                        )
+                    }
+                }
+            }
+        }
     }
 
     post {
         always {
-            archiveArtifacts artifacts: '**/reports/dependency-check/*.xml, docker-conftest-report.json, K8S-conftest-report.json, semgrep-report.json, trivy-fs-report.txt, trivy-image-report.txt, gitleaks-report.json, kubesec-reports/*.json, kubesec-deployment.json, target/*.jar, image_tag.txt, zap-report.html', allowEmptyArchive: true
+            archiveArtifacts artifacts: '**/reports/dependency-check/*.xml, docker-conftest-report.json, K8S-conftest-report.json, semgrep-report.json, trivy-fs-report.json, trivy-image-report.json, gitleaks-report.json, kscan-result.json, kubesec-deployment.json, target/*.jar, image_tag.txt, zap-report.html', allowEmptyArchive: true
             dependencyCheckPublisher(
                 pattern: 'reports/dependency-check/dependency-check-report.xml',
                 failedNewHigh: 1, 

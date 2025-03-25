@@ -119,6 +119,12 @@
             <version>1373.vb_b_4a_a_c26fa_00</version>
         </dependency>
 
+        <dependency>
+            <groupId>io.jenkins.plugins</groupId>
+            <artifactId>defectdojo</artifactId>
+            <version>1.064.v65b_f28b_4a_fea_</version>
+        </dependency>
+
 
         <!-- Override Tomcat versions to fix CVE-2025-24813 -->
         <dependency>
