@@ -223,8 +223,16 @@ pipeline {
                     def imageTag = readFile('image_tag.txt').trim()
                     sh "trivy image localhost:5000/numeric-app:${imageTag} --severity HIGH,CRITICAL -f json -o trivy-image-report.json"
                     archiveArtifacts artifacts: 'trivy-image-report.json', allowEmptyArchive: true
-                    if (sh(returnStatus: true, script: "jq '.Results[] | select(.Vulnerabilities[]?.Severity | contains(\"HIGH\", \"CRITICAL\"))' trivy-image-report.json") == 0) {
+                    
+                    sh "trivy image localhost:5000/numeric-app:${imageTag} --severity HIGH,CRITICAL" //debug
+
+                    def vulnCheck = sh(returnStatus: true, script: """
+                        jq -e '.Results[] | select(.Vulnerabilities? | length > 0) | .Vulnerabilities[] | select(.Severity == "HIGH" or .Severity == "CRITICAL")' trivy-image-report.json > /dev/null
+                    """)
+                    if (vulnCheck == 0) {
                         error "High or Critical vulnerabilities found in the container image."
+                    } else {
+                        echo "No High or Critical vulnerabilities found."
                     }
                 }
             }
