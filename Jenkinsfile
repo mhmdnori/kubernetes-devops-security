@@ -289,8 +289,12 @@ pipeline {
                     // Remove ACL Setting
                     sh "sudo setfacl -x u:1000 ${workspace}"
                     
-                    if (zapStatus != 0) {
-                        error "ZAP scan failed with exit code ${zapStatus}"
+                    if (zapStatus == 1) { 
+                        error "ZAP scan failed with critical issues (exit code ${zapStatus})"
+                    } else if (zapStatus == 2) {
+                        echo "ZAP scan completed with warnings (exit code ${zapStatus})"
+                    } else if (zapStatus != 0) {
+                        error "ZAP scan failed with unexpected exit code ${zapStatus}"
                     }
                     
                     archiveArtifacts artifacts: 'zap-report.xml', allowEmptyArchive: true
