@@ -6,7 +6,6 @@ pipeline {
         SCANNER_HOME = tool 'SonarScanner'
         SEMGREP_APP_TOKEN = credentials('SEMGREP_APP_TOKEN')
         SEMGREP_PR_ID = "${env.CHANGE_ID}"
-        APPLICATION_URL = 'http://192.168.49.2'
     }
 
     stages {
@@ -235,21 +234,28 @@ pipeline {
             steps {
                 script {
                     def workspace = pwd()
-                    def portStatus = sh(script: """
+                    def port = sh(script: """
                         kubectl -n default get svc devsecops-svc -o json | jq -r '.spec.ports[0].nodePort'
-                    """, returnStdout: true, returnStatus: true)
+                    """, returnStdout: true).trim()
                     
-                    def port = portStatus.trim()
-                    echo "Using nodePort: ${port} for DAST scan."
+                    def minikubeIp = sh(script: "minikube ip", returnStdout: true).trim()
+                    
+                    echo "Using Minikube IP: ${minikubeIp} and nodePort: ${port} for DAST scan."
+                    
+                    // ACL Setting for ZAP
+                    sh "sudo setfacl -m u:1000:rwX ${workspace}"
+                    sh "sudo setfacl -m d:u:1000:rwX ${workspace}"
                     
                     def zapStatus = sh(script: """
-                        docker run --rm --network host -v ${workspace}:/zap/wrk/:rw \
-                            -t zaproxy/zap-stable zap-api-scan.py \
-                            -t http://192.168.49.2:${port}/v3/api-docs \
+                        docker run --rm --network host -v ${workspace}:/zap/wrk/:rw -t zaproxy/zap-stable zap-api-scan.py \
+                            -t http://${minikubeIp}:${port}/v3/api-docs \
                             -f openapi \
                             -r /zap/wrk/zap-report.html \
                             -I
                     """, returnStatus: true)
+                    
+                    // Remove ACL Setting
+                    sh "sudo setfacl -x u:1000 ${workspace}"
                     
                     archiveArtifacts artifacts: 'zap-report.html', allowEmptyArchive: true
                 }
