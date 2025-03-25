@@ -220,7 +220,7 @@ pipeline {
                     def imageTag = readFile('image_tag.txt').trim()
                     sh "trivy image mohammad9195/numeric-app:${imageTag} --severity HIGH,CRITICAL -o trivy-image-report.txt"
                     archiveArtifacts artifacts: 'trivy-image-report.txt', allowEmptyArchive: true
-                    if (sh(returnStatus: true, script: "grep -q 'HIGH' trivy-image-report.txt || grep -q 'CRITICAL' trivy-image-report.txt") == 0) {
+                    if (sh(returnStatus: true, script: "grep 'Total: [1-9]' trivy-image-report.txt") == 0) {
                         error "High or Critical vulnerabilities found in the container image."
                     }
                 }
