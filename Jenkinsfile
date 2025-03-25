@@ -281,7 +281,8 @@ pipeline {
                         docker run --rm --network host -v ${workspace}:/zap/wrk/:rw -t zaproxy/zap-stable zap-api-scan.py \
                             -t http://${minikubeIp}:${port}/v3/api-docs \
                             -f openapi \
-                            -r /zap/wrk/zap-report.html \
+                            -r /zap/wrk/zap-report.xml \
+                            -x \
                             -I
                     """, returnStatus: true)
                     
@@ -292,7 +293,7 @@ pipeline {
                         error "ZAP scan failed with exit code ${zapStatus}"
                     }
                     
-                    archiveArtifacts artifacts: 'zap-report.html', allowEmptyArchive: true
+                    archiveArtifacts artifacts: 'zap-report.xml', allowEmptyArchive: true
                 }
             }
         }
@@ -323,7 +324,7 @@ pipeline {
                         [artifact: 'trivy-fs-report.json', scanType: 'Trivy Scan'], 
                         [artifact: 'trivy-image-report.json', scanType: 'Trivy Scan'], 
                         [artifact: 'reports/dependency-check/dependency-check-report.xml', scanType: 'Dependency Check Scan'], 
-                        [artifact: 'zap-report.html', scanType: 'ZAP Scan']
+                        [artifact: 'zap-report.xml', scanType: 'ZAP Scan']
                     ]
 
                     for (report in reports) {
@@ -347,14 +348,14 @@ pipeline {
 
     post {
         always {
-            archiveArtifacts artifacts: '**/reports/dependency-check/*.xml, docker-conftest-report.json, K8S-conftest-report.json, semgrep-report.json, trivy-fs-report.json, trivy-image-report.json, gitleaks-report.json, kscan-result.json, kubesec-deployment.json, target/*.jar, image_tag.txt, zap-report.html', allowEmptyArchive: true
+            archiveArtifacts artifacts: '**/reports/dependency-check/*.xml, docker-conftest-report.json, K8S-conftest-report.json, semgrep-report.json, trivy-fs-report.json, trivy-image-report.json, gitleaks-report.json, kscan-result.json, kubesec-deployment.json, target/*.jar, image_tag.txt, zap-report.xml', allowEmptyArchive: true  // تغییر به XML
             dependencyCheckPublisher(
                 pattern: 'reports/dependency-check/dependency-check-report.xml',
                 failedNewHigh: 1, 
                 failedTotalCritical: 0, 
                 stopBuild: true
             )
-            publishHTML([allowMissing: true, alwaysLinkToLastBuild: true, keepAll: true, reportDir: '.', reportFiles: 'zap-report.html', reportName: 'Owasp Zap', reportTitles: 'Owasp Zap', useWrapperFileDirectly: true])
+            publishHTML([allowMissing: true, alwaysLinkToLastBuild: true, keepAll: true, reportDir: '.', reportFiles: 'zap-report.xml', reportName: 'Owasp Zap', reportTitles: 'Owasp Zap', useWrapperFileDirectly: true])
         }
     }
 }
