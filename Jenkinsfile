@@ -319,11 +319,11 @@ pipeline {
                 script {
                     def reports = [
                         [artifact: 'gitleaks-report.json', scanType: 'Gitleaks Scan'],
-                        [artifact: 'semgrep-report.json', scanType: 'Semgrep JSON Report'],
-                        [artifact: 'trivy-fs-report.json', scanType: 'Trivy Scan'],
-                        [artifact: 'trivy-image-report.json', scanType: 'Trivy Scan'],
-                        [artifact: 'reports/dependency-check/dependency-check-report.xml', scanType: 'Dependency Check Scan'],
-                        [artifact: 'zap-report.html', scanType: 'ZAProxy Scan']
+                        [artifact: 'semgrep-report.json', scanType: 'Semgrep JSON Report'], 
+                        [artifact: 'trivy-fs-report.json', scanType: 'Trivy Scan'], 
+                        [artifact: 'trivy-image-report.json', scanType: 'Trivy Scan'], 
+                        [artifact: 'reports/dependency-check/dependency-check-report.xml', scanType: 'Dependency Check Scan'], 
+                        [artifact: 'zap-report.html', scanType: 'ZAP Scan']
                     ]
 
                     for (report in reports) {
@@ -337,8 +337,7 @@ pipeline {
                             sourceCodeUrl: 'https://github.com/your-org/your-repo.git',
                             branchTag: 'main',
                             autoCreateProducts: true,
-                            autoCreateEngagements: true,
-                            reuploadScan: true
+                            autoCreateEngagements: true
                         )
                     }
                 }
