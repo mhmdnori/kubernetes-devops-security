@@ -223,7 +223,7 @@ pipeline {
                     def imageTag = readFile('image_tag.txt').trim()
                     sh "trivy image localhost:5000/numeric-app:${imageTag} --severity HIGH,CRITICAL -f json -o trivy-image-report.json"
                     archiveArtifacts artifacts: 'trivy-image-report.json', allowEmptyArchive: true
-                    
+
                     sh "trivy image localhost:5000/numeric-app:${imageTag} --severity HIGH,CRITICAL" //debug
 
                     def vulnCheck = sh(returnStatus: true, script: """
@@ -332,7 +332,7 @@ pipeline {
                             productName: 'numeric-app',
                             scanType: report.scanType,
                             engagementName: 'CI/CD Run - March 2025',
-                            defectDojoCredentialsId: 'DEFECTDOJO_API_KEY',
+                            defectDojoCredentialsId: 'DefectDojo',
                             defectDojoUrl: "${DEFECTDOJO_URL}",
                             sourceCodeUrl: 'https://github.com/your-org/your-repo.git',
                             branchTag: 'main',
