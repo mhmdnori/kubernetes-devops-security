@@ -6,6 +6,7 @@ pipeline {
         SCANNER_HOME = tool 'SonarScanner'
         SEMGREP_APP_TOKEN = credentials('SEMGREP_APP_TOKEN')
         SEMGREP_PR_ID = "${env.CHANGE_ID}"
+        REGISTRY_IP = "${sh(script: 'minikube ssh \"ip route\" | grep default | cut -d \" \" -f3', returnStdout: true).trim()}"
     }
 
     stages {
@@ -240,7 +241,7 @@ pipeline {
             steps {
                 script {
                     def IMAGE_TAG = readFile('image_tag.txt').trim()
-                    sh "sed -i 's|replace|localhost:5000/numeric-app:${IMAGE_TAG}|g' k8s_deployment_service.yaml"
+                    sh "sed -i 's|replace|${REGISTRY_IP}:5000/numeric-app:${IMAGE_TAG}|g' k8s_deployment_service.yaml"
                     withKubeConfig([credentialsId: 'kubeconfig']) {
                         sh "kubectl apply -f k8s_deployment_service.yaml"
                         sh "kubectl rollout status deployment/devsecops --timeout=300s"
