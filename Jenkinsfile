@@ -201,18 +201,39 @@ pipeline {
             }
         }
 
-        stage('Docker Build and Push') {
+        stage('Docker Build') {
             steps {
                 script {
                     def GIT_COMMIT = sh(script: 'git rev-parse --short HEAD', returnStdout: true).trim()
                     def IMAGE_TAG = "${GIT_COMMIT}-${BUILD_NUMBER}"
-                    withDockerRegistry([credentialsId: "docker-hub", url: "https://index.docker.io/v1/"]) {
-                        sh "echo 'Building image: mohammad9195/numeric-app:${IMAGE_TAG}'"
-                        sh "docker build -t mohammad9195/numeric-app:${IMAGE_TAG} ."
-                        sh "docker push mohammad9195/numeric-app:${IMAGE_TAG}"
-                    }
+                    sh "echo 'Building image: mohammad9195/numeric-app:${IMAGE_TAG}'"
+                    sh "docker build -t mohammad9195/numeric-app:${IMAGE_TAG} ."
                     sh "echo ${IMAGE_TAG} > image_tag.txt"
                     archiveArtifacts artifacts: 'image_tag.txt', allowEmptyArchive: true
+                }
+            }
+        }
+
+        stage('Trivy container image Scan') {
+            steps {
+                script {
+                    def imageTag = readFile('image_tag.txt').trim()
+                    sh "trivy image mohammad9195/numeric-app:${imageTag} --severity HIGH,CRITICAL -o trivy-image-report.txt"
+                    archiveArtifacts artifacts: 'trivy-image-report.txt', allowEmptyArchive: true
+                    if (sh(returnStatus: true, script: "grep -q 'HIGH' trivy-image-report.txt || grep -q 'CRITICAL' trivy-image-report.txt") == 0) {
+                        error "High or Critical vulnerabilities found in the container image."
+                    }
+                }
+            }
+        }
+
+        stage('Docker Push') {
+            steps {
+                script {
+                    def IMAGE_TAG = readFile('image_tag.txt').trim()
+                    withDockerRegistry([credentialsId: "docker-hub", url: "https://index.docker.io/v1/"]) {
+                        sh "docker push mohammad9195/numeric-app:${IMAGE_TAG}"
+                    }
                 }
             }
         }
@@ -257,6 +278,10 @@ pipeline {
                     // Remove ACL Setting
                     sh "sudo setfacl -x u:1000 ${workspace}"
                     
+                    if (zapStatus != 0) {
+                        error "ZAP scan failed with exit code ${zapStatus}"
+                    }
+                    
                     archiveArtifacts artifacts: 'zap-report.html', allowEmptyArchive: true
                 }
             }
@@ -282,7 +307,7 @@ pipeline {
 
     post {
         always {
-            archiveArtifacts artifacts: '**/reports/dependency-check/*.xml, docker-conftest-report.json, K8S-conftest-report.json, semgrep-report.json, trivy-fs-report.txt, gitleaks-report.json, kubesec-reports/*.json, kubesec-deployment.json, target/*.jar, image_tag.txt, zap-report.html', allowEmptyArchive: true
+            archiveArtifacts artifacts: '**/reports/dependency-check/*.xml, docker-conftest-report.json, K8S-conftest-report.json, semgrep-report.json, trivy-fs-report.txt, trivy-image-report.txt, gitleaks-report.json, kubesec-reports/*.json, kubesec-deployment.json, target/*.jar, image_tag.txt, zap-report.html', allowEmptyArchive: true
             dependencyCheckPublisher(
                 pattern: 'reports/dependency-check/dependency-check-report.xml',
                 failedNewHigh: 1, 
