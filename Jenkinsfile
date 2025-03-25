@@ -206,8 +206,8 @@ pipeline {
                 script {
                     def GIT_COMMIT = sh(script: 'git rev-parse --short HEAD', returnStdout: true).trim()
                     def IMAGE_TAG = "${GIT_COMMIT}-${BUILD_NUMBER}"
-                    sh "echo 'Building image: mohammad9195/numeric-app:${IMAGE_TAG}'"
-                    sh "docker build -t mohammad9195/numeric-app:${IMAGE_TAG} ."
+                    sh "echo 'Building image: localhost:5000/numeric-app:${IMAGE_TAG}'"
+                    sh "docker build -t localhost:5000/numeric-app:${IMAGE_TAG} ."
                     sh "echo ${IMAGE_TAG} > image_tag.txt"
                     archiveArtifacts artifacts: 'image_tag.txt', allowEmptyArchive: true
                 }
@@ -218,7 +218,7 @@ pipeline {
             steps {
                 script {
                     def imageTag = readFile('image_tag.txt').trim()
-                    sh "trivy image mohammad9195/numeric-app:${imageTag} --severity HIGH,CRITICAL -o trivy-image-report.txt"
+                    sh "trivy image localhost:5000/numeric-app:${imageTag} --severity HIGH,CRITICAL -o trivy-image-report.txt"
                     archiveArtifacts artifacts: 'trivy-image-report.txt', allowEmptyArchive: true
                     if (sh(returnStatus: true, script: "grep 'Total: [1-9]' trivy-image-report.txt") == 0) {
                         error "High or Critical vulnerabilities found in the container image."
@@ -231,9 +231,7 @@ pipeline {
             steps {
                 script {
                     def IMAGE_TAG = readFile('image_tag.txt').trim()
-                    withDockerRegistry([credentialsId: "docker-hub", url: "https://index.docker.io/v1/"]) {
-                        sh "docker push mohammad9195/numeric-app:${IMAGE_TAG}"
-                    }
+                    sh "docker push localhost:5000/numeric-app:${IMAGE_TAG}"
                 }
             }
         }
@@ -242,7 +240,7 @@ pipeline {
             steps {
                 script {
                     def IMAGE_TAG = readFile('image_tag.txt').trim()
-                    sh "sed -i 's|replace|mohammad9195/numeric-app:${IMAGE_TAG}|g' k8s_deployment_service.yaml"
+                    sh "sed -i 's|replace|localhost:5000/numeric-app:${IMAGE_TAG}|g' k8s_deployment_service.yaml"
                     withKubeConfig([credentialsId: 'kubeconfig']) {
                         sh "kubectl apply -f k8s_deployment_service.yaml"
                         sh "kubectl rollout status deployment/devsecops --timeout=300s"
